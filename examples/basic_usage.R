@@ -1,22 +1,23 @@
 library(ssdr)
+library(uwot)
 
-sim_path <- file.path("data", "simulations", "simulation1_sharp.rds")
-if (!file.exists(sim_path)) {
-  source(file.path("simulations", "simulation1_sharp.R"))
+if (!file.exists("data/simulations/simulation1_sharp.rds")) {
+  source("simulations/simulation1_sharp.R")
 }
 
-sim <- readRDS(sim_path)
+sim <- readRDS("data/simulations/simulation1_sharp.rds")
 
 set.seed(1)
-spot_index <- sort(sample(seq_len(nrow(sim$counts)), 600))
-gene_index <- seq_len(120)
+spot_id <- sort(sample(seq_len(nrow(sim$counts)), 600))
+gene_id <- seq_len(120)
 
-counts <- sim$counts[spot_index, gene_index]
-coords <- sim$coords[spot_index, c("x", "y")]
+counts <- sim$counts[spot_id, gene_id]
+coords <- sim$coords[spot_id, c("x", "y")]
+labels <- sim$labels[spot_id]
 
 pca_input <- stats::prcomp(log1p(counts), rank. = 15)$x
 
-fit_f <- ssdr_f(
+fit <- ssdr_f(
   X = pca_input,
   coords = coords,
   rank = 2,
@@ -24,32 +25,31 @@ fit_f <- ssdr_f(
   max_iter = 20
 )
 
-embedding_f <- fit_f$U
-loadings_f <- fit_f$V
-scale_f <- fit_f$sigma
-parameters_f <- fit_f$parameters
-diagnostics_f <- fit_f$diagnostics
+embedding <- fit$U
+head(embedding)
 
-run_ssdr_nn <- FALSE
+umap_embedding <- uwot::umap(embedding, n_neighbors = 30, min_dist = 0.3)
+colnames(umap_embedding) <- c("UMAP1", "UMAP2")
+head(umap_embedding)
 
-if (run_ssdr_nn) {
-  fit_nn <- ssdr_nn(
-    X = counts,
-    coords = coords,
-    rank = 2,
-    bandwidth = 0.15,
-    lambda = 0.01,
-    hidden_dim = 32,
-    hidden_layers = 2,
-    learning_rate = 0.005,
-    max_iter = 50,
-    patience = 10,
-    seed = 1
-  )
+dir.create("outputs", showWarnings = FALSE)
 
-  embedding_nn <- fit_nn$U
-  loadings_nn <- fit_nn$V
-  scale_nn <- fit_nn$sigma
-  parameters_nn <- fit_nn$parameters
-  diagnostics_nn <- fit_nn$diagnostics
-}
+pdf("outputs/basic_usage_umap.pdf", width = 4, height = 3.5)
+plot(
+  umap_embedding,
+  col = as.integer(labels),
+  pch = 16,
+  cex = 0.6,
+  xlab = "UMAP1",
+  ylab = "UMAP2",
+  main = "SSDr-F embedding"
+)
+legend(
+  "topright",
+  legend = levels(labels),
+  col = seq_along(levels(labels)),
+  pch = 16,
+  cex = 0.7,
+  bty = "n"
+)
+dev.off()

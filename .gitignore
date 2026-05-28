@@ -3,4 +3,5 @@
 .Ruserdata
 .Rproj.user/
 data/simulations/*.rds
+outputs/
 *.Rcheck/

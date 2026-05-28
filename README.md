@@ -14,7 +14,7 @@ The R package itself is maintained separately at
   `simulation2_bootstrap_voronoi.R`.
 - `parameters/`: SSDr-F and SSDr-NN parameter settings used for the manuscript
   analyses, including the final SSDr-NN tuning panels.
-- `examples/basic_usage.R`: minimal example showing how to call `ssdr_f()` and
-  `ssdr_nn()` and extract their fitted embeddings.
+- `examples/basic_usage.R`: minimal example showing how to run SSDr-F, extract
+  the embedding, compute a UMAP representation and plot it.
 
 The simulation scripts write generated datasets to `data/simulations/`.
