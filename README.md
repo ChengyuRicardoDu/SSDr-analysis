@@ -13,7 +13,7 @@ The R package itself is maintained separately at
 - `data/reference/dlpfc_bootstrap_reference.rds`: reference pool used by
   `simulation2_bootstrap_voronoi.R`.
 - `parameters/`: SSDr-F and SSDr-NN parameter settings used for the manuscript
-  analyses.
+  analyses, including the final SSDr-NN tuning panels.
 - `examples/basic_usage.R`: minimal example showing how to call `ssdr_f()` and
   `ssdr_nn()` and extract their fitted embeddings.
 
