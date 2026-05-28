@@ -1,9 +1,7 @@
 library(ssdr)
 library(uwot)
 
-if (!file.exists("data/simulations/simulation1_sharp.rds")) {
-  source("simulations/simulation1_sharp.R")
-}
+source("simulations/simulation1_sharp.R")
 
 sim <- readRDS("data/simulations/simulation1_sharp.rds")
 
@@ -13,7 +11,6 @@ gene_id <- seq_len(120)
 
 counts <- sim$counts[spot_id, gene_id]
 coords <- sim$coords[spot_id, c("x", "y")]
-labels <- sim$labels[spot_id]
 
 pca_input <- stats::prcomp(log1p(counts), rank. = 15)$x
 
@@ -32,24 +29,42 @@ umap_embedding <- uwot::umap(embedding, n_neighbors = 30, min_dist = 0.3)
 colnames(umap_embedding) <- c("UMAP1", "UMAP2")
 head(umap_embedding)
 
-dir.create("outputs", showWarnings = FALSE)
+rescale01 <- function(x) {
+  rng <- range(x)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
 
-pdf("outputs/basic_usage_umap.pdf", width = 4, height = 3.5)
-plot(
-  umap_embedding,
-  col = as.integer(labels),
-  pch = 16,
-  cex = 0.6,
-  xlab = "UMAP1",
-  ylab = "UMAP2",
-  main = "SSDr-F embedding"
+umap_colour <- grDevices::hcl(
+  h = 300 * rescale01(umap_embedding[, "UMAP1"]),
+  c = 70,
+  l = 35 + 45 * rescale01(umap_embedding[, "UMAP2"])
 )
-legend(
-  "topright",
-  legend = levels(labels),
-  col = seq_along(levels(labels)),
-  pch = 16,
-  cex = 0.7,
-  bty = "n"
-)
-dev.off()
+
+if (interactive()) {
+  old_par <- par(mfrow = c(1, 2), mar = c(3, 3, 2, 1))
+
+  plot(
+    umap_embedding[, "UMAP1"],
+    umap_embedding[, "UMAP2"],
+    col = umap_colour,
+    pch = 16,
+    cex = 0.6,
+    xlab = "UMAP1",
+    ylab = "UMAP2",
+    main = "UMAP"
+  )
+
+  plot(
+    coords$x,
+    -coords$y,
+    col = umap_colour,
+    pch = 16,
+    cex = 0.6,
+    xlab = "x",
+    ylab = "y",
+    main = "Spatial map",
+    asp = 1
+  )
+
+  par(old_par)
+}
