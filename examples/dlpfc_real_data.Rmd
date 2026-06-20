@@ -1,0 +1,204 @@
+---
+title: "DLPFC real-data workflow with SSDr-F and SSDr-NN"
+output:
+  html_document:
+    toc: false
+---
+
+This example starts from one raw Visium DLPFC sample. 
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(
+  fig.width = 10,
+  fig.height = 7,
+  dpi = 120,
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+
+library(ssdr)
+library(Seurat)
+library(Matrix)
+library(ggplot2)
+library(patchwork)
+library(uwot)
+
+set.seed(1)
+```
+
+## Read counts and spatial positions
+
+```{r data}
+h5_path <- "../data/dlpfc_151673/151673_filtered_feature_bc_matrix.h5"
+positions_path <- "../data/dlpfc_151673/tissue_positions_list.txt"
+
+counts <- Read10X_h5(h5_path)
+
+positions <- read.csv(
+  positions_path,
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
+
+colnames(positions) <- c(
+  "barcode",
+  "in_tissue",
+  "array_row",
+  "array_col",
+  "pxl_row_in_fullres",
+  "pxl_col_in_fullres"
+)
+
+positions <- positions[positions$in_tissue == 1, ]
+
+barcodes <- intersect(colnames(counts), positions$barcode)
+
+counts <- counts[, barcodes]
+positions <- positions[match(barcodes, positions$barcode), ]
+
+coords <- data.frame(
+  x_pixel = positions$pxl_col_in_fullres,
+  y_pixel = positions$pxl_row_in_fullres,
+  row.names = positions$barcode
+)
+```
+
+## Build the SSDr-F input
+
+
+
+```{r ssdr-f-input}
+seurat_f <- Seurat::CreateSeuratObject(counts = counts)
+seurat_f <- Seurat::NormalizeData(seurat_f, verbose = FALSE)
+seurat_f <- Seurat::FindVariableFeatures(
+  seurat_f,
+  selection.method = "vst",
+  nfeatures = 2000,
+  verbose = FALSE
+)
+seurat_f <- Seurat::ScaleData(
+  seurat_f,
+  features = Seurat::VariableFeatures(seurat_f),
+  verbose = FALSE
+)
+seurat_f <- Seurat::RunPCA(
+  seurat_f,
+  features = Seurat::VariableFeatures(seurat_f),
+  npcs = 15,
+  verbose = FALSE
+)
+
+X_pca <- Seurat::Embeddings(seurat_f, "pca")
+coords_f <- as.matrix(coords[rownames(X_pca), c("x_pixel", "y_pixel")])
+
+dim(X_pca)
+```
+
+```{r ssdr-f}
+fit_f <- ssdr_f(
+  X = X_pca,
+  coords = coords_f,
+  rank = 8,
+  bandwidth = 0.08,
+  max_iter = 100,
+  tol = 1e-2
+)
+```
+
+## SSDr-NN 
+
+
+```{r ssdr-nn-input}
+seurat_nn <- Seurat::CreateSeuratObject(counts = counts)
+
+seurat_nn <- Seurat::FindVariableFeatures(
+  seurat_nn,
+  selection.method = "vst",
+  nfeatures = 1000,
+  verbose = FALSE
+)
+
+nn_features <- Seurat::VariableFeatures(seurat_nn)
+
+X_counts <- as.matrix(
+  Matrix::t(counts[nn_features, Seurat::Cells(seurat_nn), drop = FALSE])
+)
+
+coords_nn <- as.matrix(coords[rownames(X_counts), c("x_pixel", "y_pixel")])
+
+dim(X_counts)
+```
+
+```{r ssdr-nn}
+fit_nn <- ssdr_nn(
+  X = X_counts,
+  coords = coords_nn,
+  rank = 5,
+  bandwidth = 0.15,
+  lambda = 0.01,
+  hidden_dim = 128,
+  hidden_layers = 2,
+  learning_rate = 0.003,
+  max_iter = 150,
+  patience = 40,
+  tol = 1e-5,
+  seed = 123
+)
+```
+
+## Plot embeddings on the tissue
+
+
+```{r helpers}
+scale01 <- function(x) {
+  rng <- range(x)
+  if (rng[1] == rng[2]) {
+    return(rep(0.5, length(x)))
+  }
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+
+embedding_colours <- function(embedding) {
+  umap <- uwot::umap(as.matrix(embedding), n_neighbors = 15, min_dist = 0.1)
+  colnames(umap) <- c("UMAP1", "UMAP2")
+  colour <- grDevices::rgb(
+    red = scale01(umap[, "UMAP1"]),
+    green = scale01(umap[, "UMAP2"]),
+    blue = 0.3
+  )
+  list(umap = umap, colour = colour)
+}
+
+plot_umap <- function(map, title) {
+  plot_data <- data.frame(map$umap, colour = map$colour)
+  ggplot(plot_data, aes(x = UMAP1, y = UMAP2, colour = colour)) +
+    geom_point(size = 0.45) +
+    scale_colour_identity() +
+    coord_equal() +
+    labs(title = title, x = NULL, y = NULL) +
+    theme_void(base_size = 11) +
+    theme(plot.title = element_text(face = "bold", hjust = 0.5))
+}
+
+plot_spatial <- function(coords, colour, title) {
+  plot_data <- data.frame(coords, colour = colour)
+  ggplot(plot_data, aes(x = x_pixel, y = -y_pixel, colour = colour)) +
+    geom_point(size = 0.45) +
+    scale_colour_identity() +
+    coord_equal() +
+    labs(title = title, x = NULL, y = NULL) +
+    theme_void(base_size = 11) +
+    theme(plot.title = element_text(face = "bold", hjust = 0.5))
+}
+```
+
+```{r spatial-plots}
+pca_map <- embedding_colours(X_pca)
+f_map <- embedding_colours(fit_f$U)
+nn_map <- embedding_colours(fit_nn$U)
+
+(plot_umap(pca_map, "PCA UMAP") | plot_spatial(coords_f, pca_map$colour, "PCA spatial")) /
+  (plot_umap(f_map, "SSDr-F UMAP") | plot_spatial(coords_f, f_map$colour, "SSDr-F spatial")) /
+  (plot_umap(nn_map, "SSDr-NN UMAP") | plot_spatial(coords_nn, nn_map$colour, "SSDr-NN spatial"))
+```
