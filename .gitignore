@@ -4,5 +4,6 @@
 .Rproj.user/
 /data/dlpfc_151673/
 /data/reference/
+/data/151*/
 data/simulations/*.rds
 *.Rcheck/

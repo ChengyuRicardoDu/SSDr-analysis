@@ -10,8 +10,11 @@ The R package itself is maintained separately at
   Start with [the simulation instructions](simulations/README.md).
   `reference.r` downloads the source data and builds the Scenario 2 reference
   locally; `run.r` generates the evaluation datasets.
-- `parameters/`: SSDr-F and SSDr-NN parameter settings used for the manuscript
-  analyses.
+- `realdata/`: DLPFC SSDr-F and SSDr-NN fitting, evaluation and S1-S3 plotting.
+  Follow [the real-data instructions](realdata/README.md).
 
 Data are downloaded from the original authors by the scripts, not bundled
-in this repository. The revised real-data examples will be added after review.
+in this repository.
+
+Use `ssdr` 0.2.0 and `mclust` 6.1.1, with Seurat, Matrix, hdf5r, FNN and
+gtools. SSDr-NN also needs R torch and its installed backend.
