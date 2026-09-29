@@ -1,0 +1,5 @@
+/layers.tsv
+/fits/
+/*.rds
+/*.csv
+/*session_info.txt
