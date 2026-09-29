@@ -15,8 +15,5 @@ The R package itself is maintained separately at
 - `joint/`: common PCA, Joint SSDr-F and S4-S6 plotting using the inputs
   downloaded by `realdata/`. Follow [the Joint instructions](joint/README.md).
 
-Data are downloaded from the original authors by the scripts, not bundled
-in this repository.
+Data are downloaded from the original authors by the scripts.
 
-Use `ssdr` 0.2.0 and `mclust` 6.1.1, with Seurat, Matrix, hdf5r, FNN and
-gtools. SSDr-NN also needs R torch and its installed backend.
