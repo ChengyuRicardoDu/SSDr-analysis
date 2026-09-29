@@ -5,7 +5,9 @@ Run the commands below from this directory.
 ## Prepare the reference
 
 Simulation 2 resamples DLPFC expression. `reference.r` downloads section
-151507 from the original authors and creates `reference.rds` locally:
+151507 from the original authors and creates `reference.rds` locally.
+The H5 and layer table are saved beside the script as `151507.h5` and
+`layers.tsv`; running it again downloads fresh copies.
 
 ```sh
 Rscript reference.r
@@ -21,7 +23,9 @@ The matrix and gene order were verified with Seurat 5.2.1,
 SingleCellExperiment 1.28.1, scuttle 1.16.0 and scran 1.34.0.
 
 Data: [Maynard et al., 2021](https://doi.org/10.1038/s41593-020-00787-0),
-[official download list](https://github.com/LieberInstitute/HumanPilot/blob/master/AWS_File_locations.tsv).
+[official H5 download list](https://github.com/LieberInstitute/HumanPilot/blob/044446d6bd8fc154aa74f7be62ec67effb1ec376/AWS_File_locations.tsv),
+[official layer annotations](https://github.com/LieberInstitute/HumanPilot/blob/044446d6bd8fc154aa74f7be62ec67effb1ec376/10X/barcode_level_layer_map.tsv).
+The authors host the counts on S3 and the annotations in their GitHub repository.
 The original reference was prepared through
 [spatialLIBD](https://doi.org/10.1186/s12864-022-08601-w); this script recreates
 the same input from the authors' H5 and annotation files.

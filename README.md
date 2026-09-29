@@ -10,9 +10,8 @@ The R package itself is maintained separately at
   Start with [the simulation instructions](simulations/README.md).
   `reference.r` downloads the source data and builds the Scenario 2 reference
   locally; `run.r` generates the evaluation datasets.
-- `data/dlpfc_151673/`: raw filtered 10X h5 count matrix and matching
-  `tissue_positions_list.txt` for DLPFC sample `151673`.
 - `parameters/`: SSDr-F and SSDr-NN parameter settings used for the manuscript
   analyses.
-- `examples/dlpfc_real_data.Rmd`: runnable DLPFC walkthrough starting from raw
-  counts and positions, then fitting SSDr-F and SSDr-NN with spatial plots.
+
+Data are downloaded from the original authors by the scripts, not bundled
+in this repository. The revised real-data examples will be added after review.

@@ -1,22 +1,16 @@
 library(SingleCellExperiment)
 
-options(timeout = 300)
-dir.create("data", showWarnings = FALSE)
-if (!file.exists("data/151507.h5")) {
-  download.file(
-    "https://spatial-dlpfc.s3.us-east-2.amazonaws.com/h5/151507_filtered_feature_bc_matrix.h5",
-    "data/151507.h5", mode = "wb"
-  )
-}
-if (!file.exists("data/layers.tsv")) {
-  download.file(paste0(
-    "https://raw.githubusercontent.com/LieberInstitute/HumanPilot/",
-    "044446d6bd8fc154aa74f7be62ec67effb1ec376/10X/barcode_level_layer_map.tsv"
-  ), "data/layers.tsv", mode = "wb")
-}
+download.file(
+  "https://spatial-dlpfc.s3.us-east-2.amazonaws.com/h5/151507_filtered_feature_bc_matrix.h5",
+  "151507.h5", mode = "wb"
+)
+download.file(
+  "https://raw.githubusercontent.com/LieberInstitute/HumanPilot/044446d6bd8fc154aa74f7be62ec67effb1ec376/10X/barcode_level_layer_map.tsv",
+  "layers.tsv", mode = "wb"
+)
 
-X <- Seurat::Read10X_h5("data/151507.h5", use.names = FALSE)
-a <- read.delim("data/layers.tsv", header = FALSE,
+X <- Seurat::Read10X_h5("151507.h5", use.names = FALSE)
+a <- read.delim("layers.tsv", header = FALSE,
                 col.names = c("barcode", "section", "layer"))
 a <- a[a$section == 151507, ]
 pool <- a$layer[match(colnames(X), a$barcode)]

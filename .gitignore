@@ -2,5 +2,7 @@
 .RData
 .Ruserdata
 .Rproj.user/
+/data/dlpfc_151673/
+/data/reference/
 data/simulations/*.rds
 *.Rcheck/
